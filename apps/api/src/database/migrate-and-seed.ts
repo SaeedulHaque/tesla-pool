@@ -19,6 +19,13 @@ async function run(): Promise<void> {
     const applied = await orm.migrator.up();
     logger.info({ applied: applied.map((migration) => migration.name) }, 'migrations applied');
     if (!skipSeed) {
+      if (env.NODE_ENV === 'production') {
+        // The cast shares one publicly documented password: never do this to real user data.
+        logger.warn(
+          { defaultPassword: env.SEED_DEMO_PASSWORD === 'pool-demo-123' },
+          'seeding demo accounts in production; pass --skip-seed for a real deployment',
+        );
+      }
       await orm.seeder.seed(DatabaseSeeder);
       logger.info('seed data upserted');
     }

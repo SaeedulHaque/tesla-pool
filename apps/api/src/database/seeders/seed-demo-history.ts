@@ -20,7 +20,13 @@ function yesterdayAt(hours: number, minutes: number): Date {
   return date;
 }
 
-/** One completed pooled ride from "yesterday", so history screens are not empty. */
+/**
+ * Rows are built with `Object.assign` rather than the domain factories on purpose: the history
+ * needs fixed ids, back-dated timestamps and a hand-written event trail. Application code must
+ * go through `RideRequest.create` / `Pool.open` instead.
+ *
+ * One completed pooled ride from "yesterday", so history screens are not empty.
+ */
 export async function seedDemoHistory(
   em: EntityManager,
   reference: SeededReferenceData,

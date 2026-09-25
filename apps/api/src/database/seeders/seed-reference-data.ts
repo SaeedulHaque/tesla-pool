@@ -52,7 +52,10 @@ async function upsertDistances(em: EntityManager, zoneIds: Map<string, number>):
   await em.flush();
 }
 
-/** Upserts by phone. The demo password follows the environment, so it never drifts. */
+/**
+ * Upserts by phone. The demo password follows the environment, so it never drifts: a changed
+ * `SEED_DEMO_PASSWORD` deliberately overrides the stored hash, for the seeded cast only.
+ */
 async function upsertCast(em: EntityManager, ctx: SeedContext): Promise<Map<string, User>> {
   const users = new Map<string, User>();
   for (const [key, person] of Object.entries(CAST)) {
