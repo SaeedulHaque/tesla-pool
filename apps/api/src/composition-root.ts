@@ -34,6 +34,7 @@ import { MikroOrmTransactor } from './shared/transactor';
 
 export interface Overrides {
   hasher?: PasswordHasher;
+  /** Test seam only: lets a test wrap the repository to force a specific interleaving. */
   poolRepository?: PoolRepository;
 }
 
