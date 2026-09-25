@@ -13,7 +13,7 @@ import {
   NotFoundError,
 } from '../../shared/domain/domain-error';
 import type { Transactor } from '../../shared/transactor';
-import { AuditTrail } from '../audit/audit-trail';
+import { type AuditTrail } from '../audit/audit-trail';
 import { User } from '../auth/user.entity';
 import type { ZoneDistanceMatrix } from '../geography/zone-distance-matrix';
 import type { PoolCompatibilityPolicy } from '../pools/pool-compatibility-policy';
@@ -78,6 +78,7 @@ export class DriverService {
         seats: request.seats,
         distanceM: request.distanceM,
         createdAt: request.createdAt.toISOString(),
+        // Unlocked read: a UI hint only. `accept` re-checks on the pool row under FOR UPDATE.
         fitsActivePool: activePool?.canAdmit(request, this.compatibility) ?? false,
       }));
       return { vehicle: dto, items };
