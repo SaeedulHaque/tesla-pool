@@ -61,9 +61,10 @@ export async function composeApp(
     new PoolPresenter({ nameOf: (id) => zones.requireZone(id).name }),
   );
   const rideRepository = new RideRequestRepository();
+  const vehicleRepository = new VehicleRepository();
   const driverService = new DriverService(
     transactor,
-    new VehicleRepository(),
+    vehicleRepository,
     poolRepository,
     rideRepository,
     zones,
@@ -71,7 +72,14 @@ export async function composeApp(
     audit,
     poolQueries,
   );
-  const poolService = new PoolService(transactor, poolRepository, poolQueries);
+  const poolService = new PoolService(
+    transactor,
+    vehicleRepository,
+    poolRepository,
+    farePolicy,
+    audit,
+    poolQueries,
+  );
   const rideService = new RideService(
     transactor,
     rideRepository,
@@ -80,6 +88,7 @@ export async function composeApp(
     audit,
     new RideQueries(ridePresenter),
     new PoolMatcher(poolRepository, compatibility),
+    poolRepository,
   );
 
   const authService = new AuthService(
