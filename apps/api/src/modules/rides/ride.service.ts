@@ -1,5 +1,5 @@
 import type { CreateRideRequestBody, RideDto, RideScope } from '@tesla-pool/shared';
-import { AuditTrail } from '../audit/audit-trail';
+import { type AuditTrail } from '../audit/audit-trail';
 import { Actor } from '../../shared/domain/actor';
 import { ActiveRideExistsError, NotFoundError } from '../../shared/domain/domain-error';
 import { Money } from '../../shared/domain/money';
