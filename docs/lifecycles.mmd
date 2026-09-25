@@ -1,0 +1,11 @@
+stateDiagram-v2
+  direction LR
+  state "RideRequest" as R {
+    [*] --> REQUESTED
+    REQUESTED --> MATCHED: admitted to a pool
+    REQUESTED --> CANCELLED: passenger cancels
+    MATCHED --> IN_PROGRESS: pool started
+    MATCHED --> CANCELLED: passenger cancels
+    MATCHED --> REQUESTED: driver cancels pool
+    IN_PROGRESS --> COMPLETED: dropped off
+  }

@@ -3,7 +3,10 @@ import { zoneIdSchema } from './fares';
 
 export const AvailabilityBodySchema = z
   .object({
-    online: z.boolean({ required_error: 'online is required', invalid_type_error: 'online must be true or false' }),
+    online: z.boolean({
+      required_error: 'online is required',
+      invalid_type_error: 'online must be true or false',
+    }),
     zoneId: zoneIdSchema.optional(),
   })
   .refine((body) => !body.online || body.zoneId !== undefined, {

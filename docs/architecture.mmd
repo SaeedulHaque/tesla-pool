@@ -1,0 +1,22 @@
+flowchart LR
+  B["Browser"]
+  subgraph WEB["web container: Next.js App Router"]
+    UI["Pages and components"]
+    PX["/api/* proxy route handler"]
+  end
+  subgraph API["api container: Express 5"]
+    MW["Middleware: request id, auth, zod validation, rate limit"]
+    CT["Controllers"]
+    SV["Application services (one use case = one transaction)"]
+    DM["Domain: entities, policies, state machines"]
+    RP["Repositories (MikroORM EntityManager)"]
+  end
+  DB[("PostgreSQL")]
+  MG["migrate job: migrations + seed"]
+
+  B -->|"pages"| UI
+  B -->|"fetch /api/*, httpOnly cookie"| PX
+  PX -->|"HTTP on internal network"| MW
+  MW --> CT --> SV --> DM
+  SV --> RP --> DB
+  MG --> DB
