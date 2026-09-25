@@ -1,6 +1,12 @@
 import { POOL_STATUSES, RIDE_REQUEST_STATUSES } from '@tesla-pool/shared';
 import { describe, expect, it } from 'vitest';
-import { describeMember, describePool, describeRide, timelineLabel } from '@/lib/ride-status';
+import {
+  describeMember,
+  describePool,
+  describeRide,
+  describeStartAction,
+  timelineLabel,
+} from '@/lib/ride-status';
 
 describe('describeRide', () => {
   it('says Jashim is at Banani once the driver has arrived', () => {
@@ -85,5 +91,16 @@ describe('timelineLabel', () => {
   it('words known events and passes unknown ones through', () => {
     expect(timelineLabel('DRIVER_ARRIVED')).toBe('Driver arrived at pick-up');
     expect(timelineLabel('SOMETHING_NEW')).toBe('SOMETHING_NEW');
+  });
+});
+
+describe('describeStartAction', () => {
+  it('mentions the pool discount from two riders up', () => {
+    expect(describeStartAction(2)).toBe('Start trip · 2 riders, pool discount applies');
+    expect(describeStartAction(3)).toMatch(/3 riders/);
+  });
+
+  it('warns that a lone rider pays the solo fare once the trip starts', () => {
+    expect(describeStartAction(1)).toMatch(/locked/);
   });
 });
