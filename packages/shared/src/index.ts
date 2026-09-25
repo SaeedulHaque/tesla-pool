@@ -4,3 +4,4 @@ export * from './dto';
 export * from './schemas/auth';
 export * from './schemas/fares';
 export * from './schemas/rides';
+export * from './schemas/driver';

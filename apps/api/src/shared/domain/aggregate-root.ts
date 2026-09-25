@@ -9,13 +9,17 @@ export interface DomainEvent {
   readonly toStatus: string | null;
   readonly data: Readonly<Record<string, unknown>>;
   readonly occurredAt: Date;
+  /** Process-wide order in which events were recorded; persisted rows follow it. */
+  readonly sequence: number;
 }
 
 export type NewDomainEvent = Omit<
   DomainEvent,
-  'occurredAt' | 'data' | 'rideRequestId' | 'poolId' | 'fromStatus' | 'toStatus'
+  'occurredAt' | 'sequence' | 'data' | 'rideRequestId' | 'poolId' | 'fromStatus' | 'toStatus'
 > &
   Partial<Pick<DomainEvent, 'rideRequestId' | 'poolId' | 'fromStatus' | 'toStatus' | 'data'>>;
+
+let nextSequence = 0;
 
 /**
  * Base for entities that record domain events; services persist them as `ride_events`.
@@ -33,6 +37,7 @@ export abstract class AggregateRoot {
       data: {},
       ...event,
       occurredAt: new Date(),
+      sequence: nextSequence++,
     });
   }
 

@@ -74,3 +74,52 @@ export interface RideDto {
   /** Only present on the single-ride endpoint. */
   timeline?: TimelineEntryDto[];
 }
+
+export interface VehicleDto {
+  id: string;
+  displayName: string;
+  seatCapacity: number;
+  online: boolean;
+  zoneId: number | null;
+  zoneName: string | null;
+}
+
+export interface QueueItemDto {
+  id: string;
+  passengerName: string;
+  pickup: string;
+  dropoff: string;
+  seats: number;
+  distanceM: number;
+  createdAt: string;
+  /** Would this request be admitted to the driver's current pool right now? */
+  fitsActivePool: boolean;
+}
+
+export interface DriverQueueDto {
+  vehicle: VehicleDto;
+  items: QueueItemDto[];
+}
+
+export interface DriverPoolMemberDto {
+  requestId: string;
+  passengerName: string;
+  dropoff: string;
+  seats: number;
+  status: RideRequestStatus;
+  /** Null until the trip starts and the fare is locked in. */
+  farePaisa: number | null;
+  joinedAt: string;
+}
+
+/** A driver's view of one Tesla trip, with every rider in it. */
+export interface DriverPoolDto {
+  id: string;
+  status: PoolStatus;
+  pickup: string;
+  vehicleName: string;
+  seatCapacity: number;
+  seatsOccupied: number;
+  createdAt: string;
+  members: DriverPoolMemberDto[];
+}
