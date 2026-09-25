@@ -3,7 +3,6 @@
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ZodType, ZodTypeDef } from 'zod';
-import { ApiError } from '@/lib/api-client';
 import { messageForError } from '@/lib/error-messages';
 
 type FieldErrors = Record<string, string>;
@@ -39,7 +38,6 @@ export function useAuthForm<Input extends Record<string, string>>(
       router.refresh();
     } catch (error) {
       setFormError(messageForError(error));
-      if (error instanceof ApiError && error.code === 'RATE_LIMITED') setFieldErrors({});
       setPending(false);
     }
   };

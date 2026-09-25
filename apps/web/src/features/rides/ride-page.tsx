@@ -12,6 +12,8 @@ export function RidePage() {
   const active = useActiveRide();
   const [trackedId, setTrackedId] = useState<string | null>(null);
 
+  // Invariant: a finished ride no longer appears in the active list, so this effect never clears
+  // `trackedId`; only the "Book another ride" button does.
   // Adopt the active ride (also after a page reload). Once it finishes it stays on screen, so the
   // result does not vanish mid-view, until the passenger chooses to book another.
   useEffect(() => {
