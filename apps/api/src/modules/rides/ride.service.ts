@@ -2,7 +2,6 @@ import type { CreateRideRequestBody, RideDto, RideScope } from '@tesla-pool/shar
 import { type AuditTrail } from '../audit/audit-trail';
 import { Actor } from '../../shared/domain/actor';
 import { ActiveRideExistsError, NotFoundError } from '../../shared/domain/domain-error';
-import { Money } from '../../shared/domain/money';
 import type { Transactor } from '../../shared/transactor';
 import type { DistanceProvider } from '../geography/distance-provider';
 import type { ZoneDistanceMatrix } from '../geography/zone-distance-matrix';
@@ -43,8 +42,8 @@ export class RideService {
           dropoffZoneId: dropoff.id,
           seats: trip.seats,
           distanceM,
-          estimatedSolo: Money.ofPaisa(solo.total.paisa),
-          estimatedPooled: Money.ofPaisa(pooled.total.paisa),
+          estimatedSolo: solo.total,
+          estimatedPooled: pooled.total,
           pricingVersion: this.farePolicy.version,
         },
         Actor.user(passengerId),
