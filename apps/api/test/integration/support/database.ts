@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { MikroORM } from '@mikro-orm/postgresql';
 import { buildOrmOptions } from '../../../src/database/mikro-orm.config';
+import { CAST } from '../../../src/database/seeders/reference-data';
 import { TEST_DATABASE_URL } from './test-env';
 
 export async function connectTestOrm(): Promise<MikroORM> {
@@ -16,4 +17,10 @@ export async function resetState(orm: MikroORM): Promise<void> {
     'truncate table ride_events, pool_memberships, pools, ride_requests restart identity cascade',
   );
   await connection.execute('update vehicles set is_online = false, current_zone_id = null');
+  // Passengers created by register tests; the cast stays.
+  const castPhones = Object.values(CAST).map((person) => person.phone);
+  await connection.execute(
+    `delete from users where phone not in (${castPhones.map(() => '?').join(',')})`,
+    castPhones,
+  );
 }
