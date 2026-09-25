@@ -3,6 +3,15 @@ import type { Express } from 'express';
 import type { Logger } from 'pino';
 import { buildApp } from './app';
 import type { Env } from './config/env';
+import { DriverService } from './modules/drivers/driver.service';
+import { createDriverRouter } from './modules/drivers/driver.routes';
+import { VehicleRepository } from './modules/drivers/vehicle.repository';
+import { DistanceCompatibilityPolicy } from './modules/pools/pool-compatibility-policy';
+import { PoolPresenter } from './modules/pools/pool.presenter';
+import { PoolQueries } from './modules/pools/pool.queries';
+import { PoolRepository } from './modules/pools/pool.repository';
+import { createPoolRouter } from './modules/pools/pool.routes';
+import { PoolService } from './modules/pools/pool.service';
 import { AuditTrail } from './modules/audit/audit-trail';
 import { RideQueries } from './modules/rides/ride.queries';
 import { RidePresenter } from './modules/rides/ride.presenter';
@@ -43,9 +52,26 @@ export async function composeApp(
   const audit = new AuditTrail();
 
   const ridePresenter = new RidePresenter({ nameOf: (id) => zones.requireZone(id).name });
+  const compatibility = new DistanceCompatibilityPolicy(zones);
+  const poolRepository = new PoolRepository();
+  const poolQueries = new PoolQueries(
+    new PoolPresenter({ nameOf: (id) => zones.requireZone(id).name }),
+  );
+  const rideRepository = new RideRequestRepository();
+  const driverService = new DriverService(
+    transactor,
+    new VehicleRepository(),
+    poolRepository,
+    rideRepository,
+    zones,
+    compatibility,
+    audit,
+    poolQueries,
+  );
+  const poolService = new PoolService(transactor, poolRepository, poolQueries);
   const rideService = new RideService(
     transactor,
-    new RideRequestRepository(),
+    rideRepository,
     zones,
     farePolicy,
     audit,
@@ -68,6 +94,8 @@ export async function composeApp(
       },
     },
     routers: {
+      driver: createDriverRouter(driverService, authenticate),
+      pools: createPoolRouter(poolService, authenticate),
       rideRequests: createRideRouter(rideService, authenticate),
       zones: createZonesRouter(zones, authenticate),
       fareEstimates: createFareEstimatesRouter(

@@ -4,6 +4,7 @@ import { ACTIVE_REQUEST_STATUSES, type RideScope } from '@tesla-pool/shared';
 import { RideRequest } from './ride-request.entity';
 
 const HISTORY_PAGE_SIZE = 50;
+const QUEUE_PAGE_SIZE = 50;
 
 export class RideRequestRepository {
   add(em: EntityManager, request: RideRequest): void {
@@ -39,6 +40,15 @@ export class RideRequestRepository {
       RideRequest,
       { passengerId, status: { $in: ['COMPLETED', 'CANCELLED'] } },
       { orderBy: { createdAt: 'desc' }, limit: HISTORY_PAGE_SIZE },
+    );
+  }
+
+  /** Waiting requests for a pick-up zone, oldest first, that a vehicle of `capacity` can carry. */
+  findQueue(em: EntityManager, zoneId: number, capacity: number): Promise<RideRequest[]> {
+    return em.find(
+      RideRequest,
+      { status: 'REQUESTED', pickupZoneId: zoneId, seats: { $lte: capacity } },
+      { orderBy: { createdAt: 'asc', id: 'asc' }, limit: QUEUE_PAGE_SIZE },
     );
   }
 }

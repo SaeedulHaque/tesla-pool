@@ -5,9 +5,10 @@ import { RideEvent } from './ride-event.entity';
 /** Turns events recorded by aggregates into `ride_events` rows, inside the caller's transaction. */
 export class AuditTrail {
   persist(em: EntityManager, ...aggregates: AggregateRoot[]): void {
-    for (const aggregate of aggregates) {
-      for (const event of aggregate.pullEvents()) em.persist(RideEvent.from(event));
-    }
+    const events = aggregates.flatMap((aggregate) => aggregate.pullEvents());
+    // Insert in the order things happened, not aggregate by aggregate.
+    events.sort((a, b) => a.sequence - b.sequence);
+    for (const event of events) em.persist(RideEvent.from(event));
   }
 }
 

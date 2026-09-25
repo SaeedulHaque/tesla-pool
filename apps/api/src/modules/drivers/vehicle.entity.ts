@@ -37,4 +37,19 @@ export class Vehicle {
     this.plateNumber = plateNumber;
     this.seatCapacity = seatCapacity;
   }
+
+  /** Online means "taking requests in `zoneId`". */
+  goOnline(zoneId: number): void {
+    this.isOnline = true;
+    this.currentZoneId = zoneId;
+  }
+
+  /** The last zone is kept so the driver can resume where they left off. */
+  goOffline(): void {
+    this.isOnline = false;
+  }
+
+  canCarry(seats: number): boolean {
+    return seats <= this.seatCapacity;
+  }
 }
