@@ -2,7 +2,7 @@ import type { Express } from 'express';
 import type { MikroORM } from '@mikro-orm/postgresql';
 import pino from 'pino';
 import request, { type Test } from 'supertest';
-import { composeApp } from '../../../src/composition-root';
+import { composeApp, type Overrides } from '../../../src/composition-root';
 import type { Env } from '../../../src/config/env';
 import { CAST } from '../../../src/database/seeders/reference-data';
 import { connectTestOrm, resetState } from './database';
@@ -71,6 +71,17 @@ export class Harness {
     return session;
   }
 
+  /** Registers a brand-new passenger (removed again by `reset`) and returns their session. */
+  async registerPassenger(fullName: string, phone: string): Promise<Session> {
+    const response = await request(this.app)
+      .post('/api/v1/auth/register')
+      .send({ fullName, phone, password: 'crowd-pass-2026' });
+    if (response.status !== 201)
+      throw new Error(`Could not register ${fullName}: ${response.status}`);
+    const cookie = (response.headers['set-cookie'] as unknown as string[])[0].split(';')[0];
+    return new Session(this.app, cookie);
+  }
+
   anonymous(): Session {
     return new Session(this.app, null);
   }
@@ -84,10 +95,13 @@ export class Harness {
   }
 }
 
-export async function startHarness(envOverrides: Partial<Env> = {}): Promise<Harness> {
+export async function startHarness(
+  envOverrides: Partial<Env> = {},
+  overrides: Overrides = {},
+): Promise<Harness> {
   const orm = await connectTestOrm();
   const env = testEnv(envOverrides);
-  const app = await composeApp(orm, env, pino({ level: 'silent' }));
+  const app = await composeApp(orm, env, pino({ level: 'silent' }), overrides);
   const harness = new Harness(orm, app);
   await harness.reset();
   return harness;
