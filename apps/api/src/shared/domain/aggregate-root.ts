@@ -11,18 +11,33 @@ export interface DomainEvent {
   readonly occurredAt: Date;
 }
 
-/** Base for entities that record domain events; services persist them as `ride_events`. */
-export abstract class AggregateRoot {
-  private pendingEvents: DomainEvent[] = [];
+export type NewDomainEvent = Omit<
+  DomainEvent,
+  'occurredAt' | 'data' | 'rideRequestId' | 'poolId' | 'fromStatus' | 'toStatus'
+> &
+  Partial<Pick<DomainEvent, 'rideRequestId' | 'poolId' | 'fromStatus' | 'toStatus' | 'data'>>;
 
-  protected record(
-    event: Omit<DomainEvent, 'occurredAt' | 'data'> & { data?: DomainEvent['data'] },
-  ): void {
-    this.pendingEvents.push({ ...event, data: event.data ?? {}, occurredAt: new Date() });
+/**
+ * Base for entities that record domain events; services persist them as `ride_events`.
+ * The buffer is created lazily because the ORM hydrates entities without running constructors.
+ */
+export abstract class AggregateRoot {
+  private pendingEvents?: DomainEvent[];
+
+  protected record(event: NewDomainEvent): void {
+    (this.pendingEvents ??= []).push({
+      rideRequestId: null,
+      poolId: null,
+      fromStatus: null,
+      toStatus: null,
+      data: {},
+      ...event,
+      occurredAt: new Date(),
+    });
   }
 
   pullEvents(): DomainEvent[] {
-    const events = this.pendingEvents;
+    const events = this.pendingEvents ?? [];
     this.pendingEvents = [];
     return events;
   }
