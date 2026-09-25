@@ -87,7 +87,7 @@ export class Harness {
 export async function startHarness(envOverrides: Partial<Env> = {}): Promise<Harness> {
   const orm = await connectTestOrm();
   const env = testEnv(envOverrides);
-  const app = composeApp(orm, env, pino({ level: 'silent' }));
+  const app = await composeApp(orm, env, pino({ level: 'silent' }));
   const harness = new Harness(orm, app);
   await harness.reset();
   return harness;
