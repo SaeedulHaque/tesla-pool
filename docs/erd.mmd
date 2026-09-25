@@ -1,0 +1,13 @@
+erDiagram
+  USERS ||--o| VEHICLES : "drives"
+  USERS ||--o{ RIDE_REQUESTS : "requests"
+  USERS ||--o{ POOLS : "drove"
+  VEHICLES ||--o{ POOLS : "runs"
+  ZONES ||--o{ RIDE_REQUESTS : "pickup, dropoff"
+  ZONES ||--o{ POOLS : "pickup"
+  ZONES ||--o{ ZONE_DISTANCES : "from, to"
+  POOLS ||--o{ POOL_MEMBERSHIPS : "has"
+  RIDE_REQUESTS ||--o{ POOL_MEMBERSHIPS : "joins"
+  RIDE_REQUESTS ||--o{ RIDE_EVENTS : "history"
+  POOLS ||--o{ RIDE_EVENTS : "history"
+  USERS ||--o{ RIDE_EVENTS : "acted"
