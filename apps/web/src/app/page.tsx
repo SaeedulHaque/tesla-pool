@@ -1,8 +1,11 @@
-export default function HomePage() {
-  return (
-    <main className="mx-auto max-w-xl p-8">
-      <h1 className="text-2xl font-semibold">Dhaka Tesla Pool</h1>
-      <p className="mt-2 text-slate-600">Coming together.</p>
-    </main>
-  );
+import { redirect } from 'next/navigation';
+import { getSessionUser } from '@/lib/server-session';
+
+export const dynamic = 'force-dynamic';
+
+/** Signed-in people go to their side of the app; everyone else signs in. */
+export default async function HomePage() {
+  const user = await getSessionUser();
+  if (!user) redirect('/login');
+  redirect(user.role === 'DRIVER' ? '/driver' : '/ride');
 }
