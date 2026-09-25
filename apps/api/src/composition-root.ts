@@ -7,6 +7,7 @@ import { DriverService } from './modules/drivers/driver.service';
 import { createDriverRouter } from './modules/drivers/driver.routes';
 import { VehicleRepository } from './modules/drivers/vehicle.repository';
 import { DistanceCompatibilityPolicy } from './modules/pools/pool-compatibility-policy';
+import { PoolMatcher } from './modules/pools/pool-matcher';
 import { PoolPresenter } from './modules/pools/pool.presenter';
 import { PoolQueries } from './modules/pools/pool.queries';
 import { PoolRepository } from './modules/pools/pool.repository';
@@ -33,6 +34,7 @@ import { MikroOrmTransactor } from './shared/transactor';
 
 export interface Overrides {
   hasher?: PasswordHasher;
+  poolRepository?: PoolRepository;
 }
 
 /** Builds every service once with constructor injection; tests can pass fakes instead. */
@@ -53,7 +55,7 @@ export async function composeApp(
 
   const ridePresenter = new RidePresenter({ nameOf: (id) => zones.requireZone(id).name });
   const compatibility = new DistanceCompatibilityPolicy(zones);
-  const poolRepository = new PoolRepository();
+  const poolRepository = overrides.poolRepository ?? new PoolRepository();
   const poolQueries = new PoolQueries(
     new PoolPresenter({ nameOf: (id) => zones.requireZone(id).name }),
   );
@@ -76,6 +78,7 @@ export async function composeApp(
     farePolicy,
     audit,
     new RideQueries(ridePresenter),
+    new PoolMatcher(poolRepository, compatibility),
   );
 
   const authService = new AuthService(

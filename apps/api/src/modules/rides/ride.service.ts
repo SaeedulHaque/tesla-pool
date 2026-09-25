@@ -6,6 +6,7 @@ import type { Transactor } from '../../shared/transactor';
 import type { DistanceProvider } from '../geography/distance-provider';
 import type { ZoneDistanceMatrix } from '../geography/zone-distance-matrix';
 import type { FarePolicy } from '../pricing/fare-policy';
+import type { PoolMatcher } from '../pools/pool-matcher';
 import type { RideQueries } from './ride.queries';
 import { RideRequest } from './ride-request.entity';
 import type { RideRequestRepository } from './ride-request.repository';
@@ -21,6 +22,7 @@ export class RideService {
     private readonly farePolicy: FarePolicy,
     private readonly audit: AuditTrail,
     private readonly queries: RideQueries,
+    private readonly matcher: PoolMatcher,
   ) {}
 
   async request(passengerId: string, trip: CreateRideRequestBody): Promise<RideDto> {
@@ -51,6 +53,13 @@ export class RideService {
       this.rides.add(em, request);
       this.audit.persist(em, request);
       await em.flush(); // surfaces uq_active_request_per_passenger before anything is locked
+
+      // Join a qualifying pool in this same transaction, under that pool's row lock.
+      const pool = await this.matcher.tryAutoJoin(em, request);
+      if (pool) {
+        this.audit.persist(em, pool, request);
+        await em.flush();
+      }
 
       const [view] = await this.queries.passengerViews(em, [request]);
       return view;

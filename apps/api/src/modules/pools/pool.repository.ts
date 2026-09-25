@@ -42,6 +42,23 @@ export class PoolRepository {
     return pool;
   }
 
+  /**
+   * Cheap, lock-free pre-filter, oldest first (the fixed `created_at, id` order is also the lock
+   * order, so two matchers can never deadlock). Its answer is only a hint: callers must lock each
+   * candidate and re-check on the fresh row.
+   */
+  async findJoinableIds(em: EntityManager, pickupZoneId: number, seats: number): Promise<string[]> {
+    const rows = await em.execute<{ id: string }[]>(
+      `select id from pools
+        where status in ('ACCEPTED', 'DRIVER_ARRIVED')
+          and pickup_zone_id = ?
+          and seats_occupied + ? <= seat_capacity
+        order by created_at, id`,
+      [pickupZoneId, seats],
+    );
+    return rows.map((row) => row.id);
+  }
+
   async listForDriver(em: EntityManager, driverId: string, scope: RideScope): Promise<Pool[]> {
     const pools =
       scope === 'active'
