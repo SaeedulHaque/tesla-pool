@@ -7,7 +7,7 @@ import { Card, CardTitle } from '@/components/ui/card';
 import { ActionError } from '@/components/ui/error-state';
 import { SeatMeter } from '@/components/ui/seat-meter';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { describePool } from '@/lib/ride-status';
+import { describePool, describeStartAction } from '@/lib/ride-status';
 import { useDropOff, usePoolAction } from './hooks';
 import { MemberRow } from './member-row';
 
@@ -25,7 +25,7 @@ export function ActivePoolCard({ pool }: { pool: DriverPoolDto }) {
   };
 
   return (
-    <Card>
+    <Card aria-live="polite">
       <CardTitle action={<StatusBadge label={presentation.label} tone={presentation.tone} />}>
         Your trip from {pool.pickup}
       </CardTitle>
@@ -63,10 +63,7 @@ export function ActivePoolCard({ pool }: { pool: DriverPoolDto }) {
               disabled={pending}
               onClick={() => run('start')}
             >
-              Start trip
-              {riders >= 2
-                ? ` · ${riders} riders, pool discount applies`
-                : ' · fares are locked when you start'}
+              {describeStartAction(riders)}
             </Button>
           )}
           {presentation.allowedActions.includes('cancel') && !confirmingCancel && (

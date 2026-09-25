@@ -138,6 +138,13 @@ export function describePool(status: PoolStatus): PoolStatusPresentation {
   }
 }
 
+/** Label for the driver's "Start trip" button: says whether the pool discount will apply. */
+export function describeStartAction(riders: number): string {
+  return riders >= 2
+    ? `Start trip · ${riders} riders, pool discount applies`
+    : 'Start trip · fares are locked when you start';
+}
+
 export interface MemberPresentation {
   label: string;
   tone: Tone;
