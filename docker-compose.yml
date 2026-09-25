@@ -38,6 +38,11 @@ services:
     environment: { API_INTERNAL_URL: 'http://api:4000' }
     ports: ['3000:3000']
     depends_on: { api: { condition: service_healthy } }
+    healthcheck:
+      # Follows the redirect to the login page once it exists; any 2xx means Next is serving.
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/']
+      interval: 10s
+      retries: 5
 
   # Throwaway Postgres for integration tests: `npm run db:test:up` (port 5433, RAM-backed).
   db-test:
