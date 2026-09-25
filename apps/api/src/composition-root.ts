@@ -9,6 +9,11 @@ import { createAuthRouter } from './modules/auth/auth.routes';
 import { AuthService } from './modules/auth/auth.service';
 import { TokenService } from './modules/auth/token-service';
 import { MikroOrmUserRepository } from './modules/auth/user.repository';
+import { createZonesRouter } from './modules/geography/zones.routes';
+import { ZoneDistanceMatrix } from './modules/geography/zone-distance-matrix';
+import { FareEstimateService } from './modules/pricing/fare-estimate.service';
+import { createFareEstimatesRouter } from './modules/pricing/fare-estimates.routes';
+import { StandardFarePolicy } from './modules/pricing/standard-fare-policy';
 import { MikroOrmTransactor } from './shared/transactor';
 
 export interface Overrides {
@@ -16,15 +21,19 @@ export interface Overrides {
 }
 
 /** Builds every service once with constructor injection; tests can pass fakes instead. */
-export function composeApp(
+export async function composeApp(
   orm: MikroORM,
   env: Env,
   logger: Logger,
   overrides: Overrides = {},
-): Express {
+): Promise<Express> {
   const transactor = new MikroOrmTransactor(orm);
   const tokens = new TokenService(env.JWT_SECRET, env.JWT_TTL_HOURS);
   const authenticate = createAuthenticate(tokens);
+
+  // Reference data is immutable at runtime: load it once.
+  const zones = await ZoneDistanceMatrix.load(orm.em.fork());
+  const farePolicy = new StandardFarePolicy();
 
   const authService = new AuthService(
     transactor,
@@ -42,6 +51,11 @@ export function composeApp(
       },
     },
     routers: {
+      zones: createZonesRouter(zones, authenticate),
+      fareEstimates: createFareEstimatesRouter(
+        new FareEstimateService(zones, farePolicy),
+        authenticate,
+      ),
       auth: createAuthRouter({
         service: authService,
         authenticate,

@@ -14,6 +14,8 @@ export interface DatabaseProbe {
 /** Module routers, mounted under /api/v1. */
 export interface ApiRouters {
   auth: Router;
+  zones: Router;
+  fareEstimates: Router;
 }
 
 export interface AppDeps {
@@ -61,6 +63,8 @@ export function buildApp(deps: AppDeps): Express {
     next();
   });
   api.use('/auth', deps.routers.auth);
+  api.use('/zones', deps.routers.zones);
+  api.use('/fare-estimates', deps.routers.fareEstimates);
   app.use('/api/v1', api);
 
   app.use(notFoundHandler);

@@ -11,7 +11,7 @@ async function main(): Promise<void> {
   const env = loadEnv();
   const logger = createLogger(env);
   const orm = await MikroORM.init(buildOrmOptions(env));
-  const app = composeApp(orm, env, logger);
+  const app = await composeApp(orm, env, logger);
 
   const server = app.listen(env.API_PORT, () => {
     logger.info({ port: env.API_PORT }, 'api listening');
