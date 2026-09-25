@@ -132,3 +132,9 @@ export class PhoneAlreadyRegisteredError extends DomainError {
     super('PHONE_ALREADY_REGISTERED', 'That phone number is already registered.');
   }
 }
+
+export class RateLimitedError extends DomainError {
+  constructor() {
+    super('RATE_LIMITED', 'Too many attempts. Try again in a few minutes.');
+  }
+}
