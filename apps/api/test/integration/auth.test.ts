@@ -191,6 +191,12 @@ describe('auth routes', () => {
       expect(response.body.error.code).toBe('PAYLOAD_TOO_LARGE');
     });
 
+    it('forbids caching of API responses, including errors', async () => {
+      const nusrat = await h.as('nusrat');
+      expect((await nusrat.get('/auth/me')).headers['cache-control']).toBe('no-store');
+      expect((await h.anonymous().get('/auth/me')).headers['cache-control']).toBe('no-store');
+    });
+
     it('sends security headers', async () => {
       const response = await request(h.app).get('/health/live');
       expect(response.headers['x-content-type-options']).toBe('nosniff');

@@ -55,6 +55,11 @@ export function buildApp(deps: AppDeps): Express {
   });
 
   const api = Router();
+  // Every API response is per-user data: forbid shared caches and CDNs from storing it.
+  api.use((_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
   api.use('/auth', deps.routers.auth);
   app.use('/api/v1', api);
 
