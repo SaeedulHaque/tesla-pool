@@ -16,6 +16,7 @@ export interface ApiRouters {
   auth: Router;
   zones: Router;
   fareEstimates: Router;
+  rideRequests: Router;
 }
 
 export interface AppDeps {
@@ -65,6 +66,7 @@ export function buildApp(deps: AppDeps): Express {
   api.use('/auth', deps.routers.auth);
   api.use('/zones', deps.routers.zones);
   api.use('/fare-estimates', deps.routers.fareEstimates);
+  api.use('/ride-requests', deps.routers.rideRequests);
   app.use('/api/v1', api);
 
   app.use(notFoundHandler);

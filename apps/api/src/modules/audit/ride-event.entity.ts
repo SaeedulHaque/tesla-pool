@@ -1,4 +1,5 @@
 import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
+import type { DomainEvent } from '../../shared/domain/aggregate-root';
 import { User } from '../auth/user.entity';
 import { Pool } from '../pools/pool.entity';
 import { RideRequest } from '../rides/ride-request.entity';
@@ -39,4 +40,17 @@ export class RideEvent {
 
   @Property({ type: 'Date', columnType: 'timestamptz' })
   occurredAt: Date = new Date();
+
+  static from(event: DomainEvent): RideEvent {
+    const row = new RideEvent();
+    row.rideRequestId = event.rideRequestId;
+    row.poolId = event.poolId;
+    row.actorUserId = event.actor.userId;
+    row.type = event.type;
+    row.fromStatus = event.fromStatus;
+    row.toStatus = event.toStatus;
+    row.data = { ...event.data };
+    row.occurredAt = event.occurredAt;
+    return row;
+  }
 }

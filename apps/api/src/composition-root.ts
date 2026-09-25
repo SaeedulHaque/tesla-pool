@@ -3,6 +3,12 @@ import type { Express } from 'express';
 import type { Logger } from 'pino';
 import { buildApp } from './app';
 import type { Env } from './config/env';
+import { AuditTrail } from './modules/audit/audit-trail';
+import { RideQueries } from './modules/rides/ride.queries';
+import { RidePresenter } from './modules/rides/ride.presenter';
+import { createRideRouter } from './modules/rides/ride.routes';
+import { RideService } from './modules/rides/ride.service';
+import { RideRequestRepository } from './modules/rides/ride-request.repository';
 import { createAuthenticate } from './http/authenticate';
 import { Argon2PasswordHasher, type PasswordHasher } from './modules/auth/password-hasher';
 import { createAuthRouter } from './modules/auth/auth.routes';
@@ -34,6 +40,17 @@ export async function composeApp(
   // Reference data is immutable at runtime: load it once.
   const zones = await ZoneDistanceMatrix.load(orm.em.fork());
   const farePolicy = new StandardFarePolicy();
+  const audit = new AuditTrail();
+
+  const ridePresenter = new RidePresenter({ nameOf: (id) => zones.requireZone(id).name });
+  const rideService = new RideService(
+    transactor,
+    new RideRequestRepository(),
+    zones,
+    farePolicy,
+    audit,
+    new RideQueries(ridePresenter),
+  );
 
   const authService = new AuthService(
     transactor,
@@ -51,6 +68,7 @@ export async function composeApp(
       },
     },
     routers: {
+      rideRequests: createRideRouter(rideService, authenticate),
       zones: createZonesRouter(zones, authenticate),
       fareEstimates: createFareEstimatesRouter(
         new FareEstimateService(zones, farePolicy),
