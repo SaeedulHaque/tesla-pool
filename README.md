@@ -1,11 +1,14 @@
 # Dhaka Tesla Pool
 
+[![CI](https://github.com/SaeedulHaque/tesla-pool/actions/workflows/ci.yml/badge.svg)](https://github.com/SaeedulHaque/tesla-pool/actions/workflows/ci.yml)
+
 A ride-pooling MVP for Dhaka. Passengers request a ride between fixed zones; compatible
 requests share a three-wheeled "Tesla" (a CNG-style auto-rickshaw) driven by an independent
 driver. Each passenger sees only their own fare and status, and the system keeps a full history
 of what happened.
 
 - Build specification: [`DESIGN.md`](DESIGN.md) (architecture, schema, API, build order).
+- Deeper docs: [API reference](docs/api.md) · [Concurrency](docs/concurrency.md) · [Domain model](docs/domain-model.md) · [Pricing](docs/pricing.md) · [Security](docs/security.md) · [Frontend](docs/frontend.md) · [Contributing](CONTRIBUTING.md).
 - Demo video: **not recorded yet.** The 6-minute walkthrough (0-1 min pitch, 1-3 min live pooling
   story, 3-6 min code and concurrency) still needs to be recorded and linked here.
 - Live deployment: **not deployed yet.** See [Deployment](#deployment) for the Vercel + Render + Neon
