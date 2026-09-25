@@ -22,6 +22,8 @@ export class Money {
 
   /** `bps` basis points of this amount (10_000 bps = 100%), floored to whole paisa. */
   percentOfBps(bps: number): Money {
+    if (!Number.isInteger(bps))
+      throw new RangeError(`Basis points must be a whole number, got ${bps}`);
     const scaled = this.paisa * bps;
     const remainder = ((scaled % 10_000) + 10_000) % 10_000; // floor-mod, exact in integers
     return Money.ofPaisa((scaled - remainder) / 10_000);

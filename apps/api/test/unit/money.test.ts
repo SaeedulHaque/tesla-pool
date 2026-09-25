@@ -22,6 +22,10 @@ describe('Money', () => {
     expect(Money.ofPaisa(10_000).percentOfBps(10_000).paisa).toBe(10_000);
   });
 
+  it('rejects fractional basis points with a clear message', () => {
+    expect(() => Money.ofPaisa(6_000).percentOfBps(0.5)).toThrow(/basis points/i);
+  });
+
   it('rejects fractional or non-finite paisa', () => {
     expect(() => Money.ofPaisa(1.5)).toThrow(RangeError);
     expect(() => Money.ofPaisa(Number.NaN)).toThrow(RangeError);
