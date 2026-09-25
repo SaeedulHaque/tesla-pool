@@ -1,15 +1,25 @@
 import type { CreateRideRequestBody, RideDto, RideScope } from '@tesla-pool/shared';
 import { type AuditTrail } from '../audit/audit-trail';
 import { Actor } from '../../shared/domain/actor';
-import { ActiveRideExistsError, NotFoundError } from '../../shared/domain/domain-error';
+import {
+  ActiveRideExistsError,
+  DomainError,
+  NotFoundError,
+} from '../../shared/domain/domain-error';
 import type { Transactor } from '../../shared/transactor';
 import type { DistanceProvider } from '../geography/distance-provider';
 import type { ZoneDistanceMatrix } from '../geography/zone-distance-matrix';
 import type { FarePolicy } from '../pricing/fare-policy';
+import type { EntityManager } from '@mikro-orm/postgresql';
+import { PoolMembership } from '../pools/pool-membership.entity';
+import type { PoolRepository } from '../pools/pool.repository';
 import type { PoolMatcher } from '../pools/pool-matcher';
 import type { RideQueries } from './ride.queries';
 import { RideRequest } from './ride-request.entity';
 import type { RideRequestRepository } from './ride-request.repository';
+
+const CANCEL_ATTEMPTS = 3;
+const RETRY = Symbol('retry');
 
 type Zones = Pick<ZoneDistanceMatrix, 'requireZone'> & DistanceProvider;
 
@@ -23,6 +33,7 @@ export class RideService {
     private readonly audit: AuditTrail,
     private readonly queries: RideQueries,
     private readonly matcher: PoolMatcher,
+    private readonly pools: PoolRepository,
   ) {}
 
   async request(passengerId: string, trip: CreateRideRequestBody): Promise<RideDto> {
@@ -83,15 +94,61 @@ export class RideService {
     });
   }
 
+  /**
+   * Cancels REQUESTED or MATCHED rides. A MATCHED ride must lock its pool before its own row
+   * (lock order: vehicle, pool, request), so the first read is only a peek: after locking, the
+   * ride is re-checked, and if something moved in between (admitted, or the driver cancelled the
+   * pool) the whole use case is retried in a new transaction.
+   */
   async cancel(passengerId: string, requestId: string): Promise<RideDto> {
-    return this.transactor.run(async (em) => {
+    for (let attempt = 1; attempt <= CANCEL_ATTEMPTS; attempt += 1) {
+      const outcome = await this.transactor.run((em) => this.tryCancel(em, passengerId, requestId));
+      if (outcome !== RETRY) return outcome;
+    }
+    throw new DomainError(
+      'CONFLICT',
+      'That ride changed while you were cancelling. Please try again.',
+    );
+  }
+
+  private async tryCancel(
+    em: EntityManager,
+    passengerId: string,
+    requestId: string,
+  ): Promise<RideDto | typeof RETRY> {
+    const peek = await this.rides.findById(em, requestId);
+    if (!peek || !peek.isOwnedBy(passengerId)) throw new NotFoundError('Ride');
+    const actor = Actor.user(passengerId);
+
+    const membership =
+      peek.status === 'MATCHED'
+        ? await em.findOne(
+            PoolMembership,
+            { rideRequest: peek.id, leftAt: null },
+            { populate: ['pool'] },
+          )
+        : null;
+
+    if (membership) {
+      const pool = await this.pools.findByIdForUpdate(em, membership.pool.id);
       const request = await this.rides.findByIdForUpdate(em, requestId);
-      if (!request || !request.isOwnedBy(passengerId)) throw new NotFoundError('Ride');
-      request.cancel(Actor.user(passengerId));
-      this.audit.persist(em, request);
+      const stillMember = pool?.activeMemberships().some((m) => m.rideRequest.id === requestId);
+      if (!pool || !request || request.status !== 'MATCHED' || !stillMember) return RETRY;
+
+      pool.removeMember(request, actor);
+      this.audit.persist(em, pool, request);
       await em.flush();
       const [view] = await this.queries.passengerViews(em, [request], { timeline: true });
       return view;
-    });
+    }
+
+    const request = await this.rides.findByIdForUpdate(em, requestId);
+    if (!request) throw new NotFoundError('Ride');
+    if (request.status === 'MATCHED') return RETRY; // admitted to a pool after the peek
+    request.cancel(actor); // 409 INVALID_TRANSITION unless still REQUESTED
+    this.audit.persist(em, request);
+    await em.flush();
+    const [view] = await this.queries.passengerViews(em, [request], { timeline: true });
+    return view;
   }
 }
