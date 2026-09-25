@@ -19,6 +19,11 @@ import { RideRequest } from './ride-request.entity';
 import type { RideRequestRepository } from './ride-request.repository';
 
 const CANCEL_ATTEMPTS = 3;
+/**
+ * Returned by `tryCancel` when the ride changed between the unlocked peek and the locks (it was
+ * admitted to a pool, or the driver cancelled the pool). The whole use case then runs again in a
+ * fresh transaction, which keeps the lock order vehicle -> pool -> request intact.
+ */
 const RETRY = Symbol('retry');
 
 type Zones = Pick<ZoneDistanceMatrix, 'requireZone'> & DistanceProvider;
