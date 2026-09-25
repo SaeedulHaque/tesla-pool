@@ -35,6 +35,11 @@ function fromDatabaseError(error: unknown): { code: ErrorCode; message: string }
         return { code: 'ACTIVE_RIDE_EXISTS', message: 'You already have an active ride.' };
       case 'uq_active_pool_per_vehicle':
         return { code: 'ACTIVE_POOL_EXISTS', message: 'Finish or cancel your active trip first.' };
+      case 'users_phone_key':
+        return {
+          code: 'PHONE_ALREADY_REGISTERED',
+          message: 'That phone number is already registered.',
+        };
       case 'uq_active_membership_per_request':
         return { code: 'CONFLICT', message: 'That ride is already in a pool.' };
       default:

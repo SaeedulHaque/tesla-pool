@@ -4,6 +4,9 @@ import type { RideRequestStatus } from '@tesla-pool/shared';
 import { User } from '../auth/user.entity';
 import { Zone } from '../geography/zone.entity';
 
+/** Only cash for now; a `TESLA_PAY` wallet is a planned addition. */
+export type PaymentMethod = 'CASH';
+
 @Entity({ tableName: 'ride_requests' })
 export class RideRequest {
   @PrimaryKey({ type: 'uuid' })
@@ -50,7 +53,7 @@ export class RideRequest {
   pricingVersion!: string;
 
   @Property({ type: 'string' })
-  paymentMethod: 'CASH' = 'CASH';
+  paymentMethod: PaymentMethod = 'CASH';
 
   @Property({ type: 'Date', columnType: 'timestamptz' })
   createdAt: Date = new Date();
