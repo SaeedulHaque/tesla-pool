@@ -1,0 +1,63 @@
+# `docker compose up --build` works out of the box with the placeholder values in
+# .env.example; create a .env to override them (later files win).
+x-env: &env
+  env_file:
+    - .env.example
+    - path: .env
+      required: false
+
+services:
+  db:
+    image: postgres:17-alpine
+    <<: *env
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 5s
+      retries: 10
+
+  migrate: # one-shot: migrations, then seed (safe to re-run)
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    command: ['node', 'dist/database/migrate-and-seed.js']
+    <<: *env
+    depends_on: { db: { condition: service_healthy } }
+    restart: 'no'
+
+  api:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    <<: *env
+    ports: ['4000:4000'] # optional, for curl
+    depends_on: { migrate: { condition: service_completed_successfully } }
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:4000/health/ready']
+      interval: 10s
+      retries: 5
+
+  web:
+    build: { context: ., dockerfile: apps/web/Dockerfile }
+    environment: { API_INTERNAL_URL: 'http://api:4000' }
+    ports: ['3000:3000']
+    depends_on: { api: { condition: service_healthy } }
+    healthcheck:
+      # Follows the redirect to the login page once it exists; any 2xx means Next is serving.
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/']
+      interval: 10s
+      retries: 5
+
+  # Throwaway Postgres for integration tests: `npm run db:test:up` (port 5433, RAM-backed).
+  db-test:
+    image: postgres:17-alpine
+    profiles: ['test']
+    environment:
+      POSTGRES_USER: tesla
+      POSTGRES_PASSWORD: change-me
+      POSTGRES_DB: tesla_pool_test
+    ports: ['5433:5432']
+    tmpfs: [/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U tesla -d tesla_pool_test']
+      interval: 2s
+      retries: 30
+
+volumes:
+  pgdata: {}
